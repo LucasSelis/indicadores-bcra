@@ -13,6 +13,8 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+import extract
+
 DB_PATH = Path(__file__).parent / "data" / "bcra.db"
 QUERIES_PATH = Path(__file__).parent / "sql" / "queries.sql"
 
@@ -50,12 +52,17 @@ st.caption(
     "este dashboard. Código completo en el repo."
 )
 
-if not DB_PATH.exists():
-    st.error(
-        "No existe data/bcra.db todavía. Corré `python extract.py` primero "
-        "para descargar los datos del BCRA."
-    )
-    st.stop()
+@st.cache_resource
+def asegurar_datos() -> None:
+    """La primera vez que se levanta la app (local o en la nube) no hay
+    base de datos todavía: la generamos on-demand en vez de exigirle al
+    usuario un paso manual aparte."""
+    if not DB_PATH.exists():
+        with st.spinner("Primera carga: descargando datos del BCRA..."):
+            extract.run()
+
+
+asegurar_datos()
 
 queries = load_queries()
 
